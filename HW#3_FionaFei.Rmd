@@ -1,0 +1,261 @@
+---
+title: "HW#3_FionaFei"
+author: "Fiona Fei"
+date: "10/5/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(boot)
+```
+
+###Chapter 5, Page 200, Problem 8
+
+####(a)In this data set, what is n and what is p? Write out the model used to generate the data in equation form.
+
+```{r}
+set.seed(1)
+y = rnorm(100)
+x = rnorm(100)
+y = x - 2*x^2 + rnorm(100)
+
+```
+With n = 100, p = 2, we can generate the model below
+
+$Y = X - 2*X^2 + \epsilon$
+
+####(b)Create a scatterplot of X against Y . Comment on what you find.
+
+
+```{r}
+plot(x,y)
+
+```
+From the scatterplot, we can find that there is a curved parabolic relationship between x and y. 
+
+####(c)
+
+```{r}
+set.seed(10)
+data1 = data.frame(x,y)
+
+fit.glm1 = glm(y~x,family=gaussian, data=data1)
+glm1 = cv.glm(data1,fit.glm1)
+
+```
+
+
+```{r}
+fit.glm2 = glm(y ~ poly(x, 2),family=gaussian, data=data1)
+glm2 = cv.glm(data1, fit.glm2)
+
+```
+
+```{r}
+fit.glm3 = glm(y ~ poly(x, 3),family=gaussian, data=data1)
+glm3 = cv.glm(data1, fit.glm3)
+
+```
+
+```{r}
+fit.glm4 = glm(y ~ poly(x, 4),family=gaussian, data=data1)
+glm4 = cv.glm(data1, fit.glm4)
+
+```
+
+
+```{r}
+glm1$delta[1]
+glm2$delta[1]
+glm3$delta[1]
+glm4$delta[1]
+
+```
+####(d) Repeat (c) using another random seed, and report your results. Are your results the same as what you got in (c)? Why?
+
+```{r}
+set.seed(100)
+data1 = data.frame(x,y)
+
+fit.glm1.d = glm(y~x,family=gaussian, data=data1)
+glm1.d = cv.glm(data1,fit.glm1.d)
+
+```
+
+
+```{r}
+fit.glm2.d = glm(y ~ poly(x, 2),family=gaussian, data=data1)
+glm2.d = cv.glm(data1, fit.glm2.d)
+
+```
+
+```{r}
+fit.glm3.d = glm(y ~ poly(x, 3),family=gaussian, data=data1)
+glm3.d = cv.glm(data1, fit.glm3.d)
+
+```
+
+```{r}
+fit.glm4.d = glm(y ~ poly(x, 4),family=gaussian, data=data1)
+glm4.d = cv.glm(data1, fit.glm4.d)
+
+```
+
+
+```{r}
+glm1.d$delta[1]
+glm2.d$delta[1]
+glm3.d$delta[1]
+glm4.d$delta[1]
+
+```
+We can see that the results from part d are the same with the results from part c even with a different random seed. This is due to LOOCV only evaluates for a single observation.Thus, the number of folds will not affect the result. 
+
+####(e) Which of the models in (c) had the smallest LOOCV error? Is this what you expected? Explain your answer.
+
+We can see from the above results that the smallest is glm2, this is because the relationship between x and y is quadratic. 
+
+
+
+####(f) Comment on the statistical significance of the coefficient esti- mates that results from fitting each of the models in (c) using least squares. Do these results agree with the conclusions drawn based on the cross-validation results?
+
+```{r}
+summary(fit.glm1)
+
+```
+
+
+```{r}
+summary(fit.glm2)
+
+```
+
+```{r}
+summary(fit.glm3)
+
+```
+
+```{r}
+summary(fit.glm4)
+
+```
+
+From the p-value, we can see that the linear term and the quadratic term are statistically significant. Moreover, the cubic term and the 4th degree term are not statistically significant compare with the other two. This results agree with the conclusions drawn based on the cross-validation results. 
+
+
+###Chapter 5, Page 201, Problem 9
+
+####(a) Based on this data set, provide an estimate for the population mean of medv. Call this estimate μˆ.
+```{r}
+library(MASS)
+mean(Boston$medv)
+```
+
+$\hat {\mu}=22.53281$
+
+####(b) Provide an estimate of the standard error of μˆ. Interpret this result.
+```{r}
+se.hat= sd(Boston$medv)/sqrt(dim(Boston)[1])
+se.hat
+```
+
+####(c) Now estimate the standard error of μˆ using the bootstrap. How does this compare to your answer from (b)?
+```{r}
+
+boot.mu = function(data, index) {
+  mu = data[index]
+  return (mean(mu))
+}
+result = boot(Boston$medv, boot.mu, 1000)
+
+```
+
+
+####(d) Based on your bootstrap estimate from (c), provide a 95 % con- fidence interval for the mean of medv. Compare it to the results obtained using t.test(Boston$medv).
+
+```{r}
+t.test(Boston$medv)
+
+```
+
+
+```{r}
+CI.mu.hat = c(22.53 - 2 * 0.4198, 22.53 + 2 * 0.4198)
+CI.mu.hat
+
+```
+
+Thus, we can see that the t-test CI and the 95% CI calculated by bootstrap estimate are very similar.
+
+####(e) Based on this dataset, provide an estimate
+
+```{r}
+mean.hat = median(Boston$medv)
+mean.hat
+```
+
+
+
+####(f) We now would like to estimate the standard error of μˆ.Unfortunately, there is no simple formula for computing the standard error of the median. Instead, estimate the standard error of the median using the bootstrap. Comment on your findings.
+
+```{r}
+median.bs = function(data, index) {
+    mu = median(data[index])
+    return (mu)
+}
+boot(Boston$medv, median.bs, 1000)
+
+```
+
+We can see that the sd is 0.38 from the above bootstrp sample. The sd value is relatively small.
+
+####(g)Based on this data set, provide an estimate for the tenth percentile of medv in Boston suburbs.
+```{r}
+quantile.hat = quantile(Boston$medv, c(0.1))
+quantile.hat
+
+```
+
+
+####(h) Use the bootstrap to estimate the standard error. Comment on your findings.
+```{r}
+boot.fn = function(data, index) {
+    mu = quantile(data[index], c(0.1))
+    return (mu)
+}
+boot(medv, boot.fn, 1000)
+```
+
+We can see from the above bootstrap sampling, the sd value is 0.49 for the estimated tenth percentile, which is also very small. 
+
+###Chapter 6, Page 259, Problem 2 (a)(b) For parts (a) through (c), indicate which of i. through iv. is correct. Justify your answer.
+
+### (a) The lasso, relative to least squares, is:
+
+iii. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance. Because the shrinking coefficient estimates can increase the rigidity and bias of a model while reducing the model's variance by a significant amount. 
+
+#### (b) Repeat (a) for ridge regression relative to least squares.
+
+iii. Less flexible and hence will give improved prediction accu- racy when its increase in bias is less than its decrease in variance. Because ridge regression is a shrinkage method which can shrink coefficient estimates to closely to 0, and this leads to eliminate the unnecessary predictors in order to prevent over-fitting problems. 
+
+
+###Chapter 6, Page 260, Problem 4 Suppose we estimate the regression coefficients in a linear regression model by minimizing
+
+#### (a) As we increase λ from 0, the training RSS will:
+iii. Steadily increase. Because as we increase $\lambda$ from 0, the model will become more and more inflexible as we stricting the coefficient more and more. This will leads to the increase of training RSS as the bias grows larger.
+
+#### (b) Repeat (a) for test RSS.
+ii. Decrease initially, and then eventually start increasing in a U shape. Because for similar reason as above, as the model becomes more and more inflexible, the test RSS initially begin to decrease before increasing again after that in a typical U shape.
+
+#### (c) Repeat (a) for variance.
+iv. Steadily decrease. Because as the model become more and more inflexible, it will leads to the variance to steadily decrease.
+
+#### (d) Repeat (a) for (squared) bias.
+iii. Steadily increase. Because as the model become more and more inflexible, it will leads to the bias to a steadily increase.
+
+#### (e) Repeat (a) for the irreducible error.
+v. Remain constant. Because the irreducible error is independent, which means it will not be affected.
+
+
+

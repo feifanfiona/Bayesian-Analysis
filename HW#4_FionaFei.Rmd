@@ -1,0 +1,212 @@
+---
+title: "HW#4 Fiona Fei"
+author: "Fiona Fei"
+date: "10/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Chapter6, P263, Question9: In this exercise, we will predict the number of applications received using the other variables in the College data set.
+
+```{r}
+library(ISLR)
+library(tidyverse)
+data('College')
+if(!require("pls"))
+{
+  install.packages("pls")
+  library(pls)
+}
+
+if(!require("glmnet"))
+{
+  install.packages("glmnet")
+  library(glmnet)
+}
+
+library(MASS)
+library(ggplot2)
+library(data.table)
+library(leaps)
+```
+
+#### (a) Split the data set into a training set and a test set.
+```{r}
+#College
+set.seed(4620)
+ix=sample(1:nrow(College), nrow(College)/2)
+college.train=College[ix,]
+college.test = College[-ix,]
+```
+
+
+#### (b)Fit a linear model using least squares on the training set, and report the test error obtained.
+
+```{r}
+set.seed(4620)
+lm.fit = lm(Apps~., data=college.train)
+lm.pred = predict(lm.fit, college.test)
+mean((college.test[, "Apps"] - lm.pred)^2)
+
+```
+
+For linear model, the test MSE is 1626898.
+
+#### (c)Fit a ridge regression model on the training set, with λ chosen by cross-validation. Report the test error obtained.
+
+```{r}
+set.seed(4620)# for reproducibility
+x=model.matrix(Apps~.,College)[,-1]
+y=College$Apps
+ix=sample(1:nrow(x),nrow(x)/2)# 50/50 split
+x.train=x[ix,]
+x.test=x[-ix,]
+y.train=y[ix]
+y.test=y[-ix]
+
+```
+
+
+```{r}
+ridge.cv =cv.glmnet(x.train,y.train,alpha=0)
+lambda.cv = ridge.cv$lambda.min# lambda that minimizes the cv MSE.
+lambda.cv
+```
+
+```{r}
+fit.ridge =glmnet(x.train,y.train,alpha=0,lambda=lambda.cv)
+pred.ridge =predict(fit.ridge, newx=x.test)
+mean((pred.ridge-y.test)^2)
+```
+
+
+#### (d) Fit a lasso model on the training set, with λ chosen by cross- validation. Report the test error obtained, along with the number of non-zero coefficient estimates.
+
+```{r}
+lasso.cv =cv.glmnet(x.train,y.train,alpha=1)
+#plot(lasso.cv)
+lambda.cv = lasso.cv$lambda.min# the minimizing lambda
+lambda.cv
+fit.lasso =glmnet(x.train,y.train,alpha=1,lambda=lambda.cv)
+pred.lasso =predict(fit.lasso, newx=x.test)
+mean((pred.lasso-y.test)^2)
+
+```
+
+#### (e) Fit a PCR model on the training set, with M chosen by cross- validation. Report the test error obtained, along with the value of M selected by cross-validation.
+
+```{r}
+set.seed(4620)# for reproducibility
+fit.pcr =pcr(Apps~.,data=college.train,scale=TRUE,validation="CV")
+summary(fit.pcr)
+validationplot(fit.pcr,val.type="MSEP")
+
+```
+
+It seems like M = 15 provides the smallest MSE.
+
+```{r}
+pcr.pred.M15 =predict(fit.pcr,college.test,ncomp=15)
+mean((pcr.pred.M15-college.test$Apps)^2)
+
+```
+
+THe test error is 3105724, and the M selected for MSE is M=15.
+
+#### (f) Fit a PLS model on the training set, with M chosen by cross- validation. Report the test error obtained, along with the value of M selected by cross-validation.
+```{r}
+set.seed(4620)# for reproducibility
+fit.pls =plsr(Apps~.,data=college.train,scale=TRUE,validation="CV")
+summary(fit.pls)
+
+
+```
+```{r}
+validationplot(fit.pls,val.type="MSEP")
+
+```
+We can see that M = 15 provides the smallest MSE. 
+
+```{r}
+
+pls.pred.M15 =predict(fit.pls,college.test,ncomp=15)
+mean((pls.pred.M15-college.test$Apps)^2)
+```
+
+The test error is 1627197, and the M selected for MSE is M = 15.
+
+#### (g) Comment on the results obtained. How accurately can we pre- dict the number of college applications received? Is there much difference among the test errors resulting from these five ap- proaches?
+
+```{r}
+#This part of code is inspired from online sources.
+# as_data_frame(rbind(lm.fit,
+#       fit.ridge,
+#       fit.lasso,
+#       fit.pcr,
+#       fit.pls)) %>%
+#     mutate(model = c('Linear', 'Ridge', 'Lasso', 'PCR', 'PLS')) %>%
+#     select(model, RMSE, Rsquared)
+
+```
+
+
+
+### Chapter6, p264, Question 11. We will now try to predict per capita crime rate in the Boston data set.
+
+#### (a) Try out some of the regression methods explored in this chapter, such as best subset selection, the lasso, ridge regression, and PCR. Present and discuss results for the approaches that you consider.
+
+```{r}
+data(Boston)
+boston = data.table(Boston)
+set.seed(4620)
+x = model.matrix(crim ~ . - 1, data = Boston)
+y = Boston$crim
+
+```
+
+#### Lasso
+```{r}
+asso.cv =cv.glmnet(x.train,y.train,alpha=1)
+plot(lasso.cv)
+
+
+```
+
+
+#### Ridge
+```{r}
+
+ridge.cv =cv.glmnet(x,y,alpha=0)
+plot(ridge.cv)
+
+
+```
+
+#### PCR
+```{r}
+set.seed(4620)# for reproducibility
+fit.pcr =pcr(crim~.,data=boston,scale=TRUE,validation="CV")
+summary(fit.pcr)
+
+
+```
+
+Comparing with Ridge, Lasso, and PCR models, we can see that PCR fits the best with its 13 components.
+
+
+#### (b) Propose a model (or set of models) that seem to perform well on this data set, and justify your answer. Make sure that you are evaluating model performance using validation set error, cross- validation, or some other reasonable alternative, as opposed to using training error.
+
+Based on the above chart, the one with lowest cross validate mean squared errors is the one with 13 components, which is the PCR model. 
+
+#### (c) Does your chosen model involve all of the features in the data set? Why or why not?
+
+I would like to choose the 13 parameter model because it has the lowest cross validated RMSE.
+
+
+### Chapter7, P297, Question 1
+
+Please see the pdf below.
+

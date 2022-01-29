@@ -1,0 +1,466 @@
+---
+title: "STAT 4620 HW#1"
+author: "Fiona Fei"
+date: "9/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = TRUE)
+
+library(corrplot)
+library(ggplot2)
+
+```
+
+## Question #1
+### Page 52, Problem 1
+
+For each of parts (a) through (d), indicate whether we would generally expect the performance of a flexible statistical learning method to be better or worse than an inflexible method. Justify your answer. 
+
+(a) We would expect to use a more flexible method because using inflexible method would be difficult to fit the data closer with the large sample size. 
+
+(b) We would expect to use a more inflexible method to prevent the overfit problem with flexible method.
+
+(c) We would expect to use a more flexible method in order to fit the non-linear relationship between predictors and response due to the more degrees of freedom.
+
+(d) We would expect to use a more inflexible method to reduce the variance of the error term. 
+
+## Question #2
+### Page 52, Problem 2
+
+(a) This is a regression problem. We are interested in the inference which would be easy for us to understand the relationship between them. 
+In this problem, n = 500, p = 3.
+
+(b) This is a classification problem. We are interested in the prediction of the future, in this case, is whether the new product will be a success or a failure.
+In this problem, n = 20, p = 13.
+
+(c) This is a regression problem. And we are interested in predicting the % change in USD/Euro exchange rate in relation to weekly changes in the world's.
+In this problem, n = 52, p = 3.
+
+## Question #3
+### Page 56, Problem 10
+
+```{r, include = FALSE}
+library(MASS)
+Boston
+?Boston
+
+
+```
+
+
+
+```{r}
+#(a)
+#Calculate number of rows.
+row = nrow(Boston)
+row
+#Calculate number of columns
+col = ncol(Boston)
+col
+
+
+```
+
+The rows represent observations(different houses), and the columns represent variables(different characteristics of the houses such as per capita crime rate by town, proportion of residential land zoned for lots over 25,000 sq.ft, proportion of non-retail business acres per town, etc).
+
+
+```{r}
+#(b)
+#Transfer to numeric values.
+Boston$chas <- as.numeric(Boston$chas)
+Boston$rad <- as.numeric(Boston$rad)
+#plot the graph
+pairs(Boston)
+
+```
+
+We can find from the pairwise scatterplots that there are some sort of relationships between the predictors. 
+
+For example: 
+
+*High level of index of accessibility to radial highways contain the highest level of per capita crime rate by town.
+
+*medv has an negative relationship to lower status of the population, nitrogen oxides concentration and proportion of non-retail business acres per town.
+
+*medv has a positive proportion to average number of rooms per dwelling.
+
+(c)
+```{r}
+#round the digit to 2
+round(cor(Boston),
+  digits = 2 
+)
+
+
+```
+Yes, there are predictors associated with per capita crime rate based on the correlation plot. 
+The highest 4 values(rad, tax, Istat, nox) all have a positive relationship with per capita crime rate.
+
+(d)
+
+```{r}
+#plot the summary
+summary(Boston$crim)
+#Crime rate plot
+qplot(Boston$crim, binwidth=5 , xlab = "Crime rate", ylab="Number of Suburbs" )
+#select crime rate higher than 15%
+selection <- subset( Boston, crim > 15)
+nrow(selection)/ nrow(Boston)
+#select crime rate higher than 45%
+selection <- subset( Boston, crim > 45)
+nrow(selection)/ nrow(Boston)
+```
+
+Since the median and maximum crime rate values are about 0.26% and 89%, it is true that some neighborhoods where the crime rate is extremely high.
+
+We can see that around 5.93% of neighborhoods in suburbs of Boston appear to have crime rates above 15%; around 0.99% of neighborhoods in suburbs of Boston appear to have crime rates above 45%.
+
+```{r}
+summary(Boston$tax)
+
+qplot(Boston$tax, binwidth=50 , xlab = "Full-value property-tax rate per $10,000", ylab="Number of Suburbs")
+#Select where tax higher than $500.
+selection <- subset( Boston, tax > 500)
+nrow(selection)/ nrow(Boston)
+```
+
+There are few neighborhoods where tax rates are relative higher on the histogram. The median and average tax($) are 330 and 408.20.
+
+We can see that around 27% of neighborhoods in suburbs of Boston appear to have tax higher than $500.
+
+
+```{r}
+summary(Boston$ptratio)
+qplot(Boston$ptratio, binwidth = 2, xlab ="Pupil-teacher ratio by town", ylab="Number of Suburbs")
+#Select where ptratio is higher than 21
+selection <- subset( Boston, ptratio> 21) 
+nrow(selection)/ nrow(Boston)
+```
+
+Since the median and average for ptratio is 19.05 and 18.46, there are few neighborhoods where ptratio are relatively higher. 
+We can see that around 3.5% of neighborhoods in suburbs of Boston appear to have pratio higher than 21.
+
+(e)
+
+```{r}
+#where chas is true.
+nrow(subset(Boston, chas ==1)) 
+```
+
+There are 35 suburbs in this data set bound the Charles river. 
+
+(f)
+```{r}
+summary(Boston$ptratio)
+```
+
+
+The median pupil-teacher ratio among the towns in this data set is 19. 
+
+(g)
+```{r}
+#Set medv in order
+selection = Boston[order(Boston$medv),]
+selection[1,]
+
+```
+
+From above chart, we can see that suburb 399 has lowest median value of owner-occupied homes. 
+
+```{r}
+summary(selection)
+
+```
+
+* Median and average of crime rate is very high compared with all Boston neighborhoods. 
+* Residential land zoned for lots is smaller than 25,000 sq.ft, which is smaller than more than half of the neighborhoods in Boston.
+* Proportion of non-retail business acres per town is very high among all suburbs. 
+* This suburd doesn't bound the Charles river. 
+* Nitrogen oxides concentration is very high compared with others. 
+* Average number of rooms per dwelling is very low compared with others. 
+* The houses are very old because it has very high proportion of owner proportion of owner-occupied units built prior to 1940. 
+* Weighted mean of distances to five Boston employment centres is very low compared with others. 
+* Index of accessibility to radial highways is very high compared with others.
+* Full-value property-tax rate per $10,000 is very high compared with others.
+* Pupil-teacher ratio by town is very high compared with others.
+* The proportion of blacks by town is very high compared with others.
+* Lower status of the population is very high compared with others.
+* Median value of owner-occupied homes in $1000s is very low compared with others.
+
+In conclusion, suburb 399 is one of the least favorable places to live in Boston.
+
+
+(h)
+```{r}
+rm_over_7 <- subset(Boston, rm>7)
+nrow(rm_over_7)  
+
+```
+
+*64 of the suburbs average more than seven rooms per dwelling.
+
+```{r}
+rm_over_8 <- subset(Boston, rm>8)
+nrow(rm_over_8)  
+
+```
+
+*13 of the suburbs average more than 8 rooms per dwelling.
+
+```{r}
+summary(rm_over_8)
+
+```
+
+## Question #4
+### Page 126, Problem 15
+
+```{r}
+attach(Boston)
+#fit zn.
+fit.zn <- lm(crim ~ zn)
+summary(fit.zn)
+```
+```{r}
+#fit indus.
+fit.indus <- lm(crim ~ indus)
+summary(fit.indus)
+```
+
+
+
+
+```{r}
+#set as factor.
+chas <- as.factor(chas)
+fit.chas <- lm(crim ~ chas)
+summary(fit.chas)
+
+```
+
+
+
+
+```{r}
+fit.nox <- lm(crim ~ nox)
+summary(fit.nox)
+```
+
+
+
+
+```{r}
+fit.rm <- lm(crim ~ rm)
+summary(fit.rm)
+```
+
+
+
+
+```{r}
+fit.age <- lm(crim ~ age)
+summary(fit.age)
+
+
+```
+
+
+
+
+```{r}
+fit.dis <- lm(crim ~ dis)
+summary(fit.dis)
+
+
+```
+
+
+
+
+
+```{r}
+fit.rad <- lm(crim ~ rad)
+summary(fit.rad)
+
+
+```
+
+
+
+
+
+```{r}
+
+fit.tax <- lm(crim ~ tax)
+summary(fit.tax)
+
+```
+
+
+
+```{r}
+fit.ptratio <- lm(crim ~ ptratio)
+summary(fit.ptratio)
+
+
+```
+
+
+
+
+
+```{r}
+fit.black <- lm(crim ~ black)
+summary(fit.black)
+
+
+```
+
+
+
+
+
+```{r}
+fit.lstat <- lm(crim ~ lstat)
+summary(fit.lstat)
+
+
+```
+
+```{r}
+fit.medv <- lm(crim ~ medv)
+summary(fit.medv)
+```
+
+From the summary charts above, we can see that all predictors except for "chas" have a p-value less than 0.05. So we may conclude that there is a statistically significant association between each predictor and the response except for the “chas” predictor.
+
+(b)
+```{r}
+fit.all <- lm(crim ~ ., data = Boston)
+summary(fit.all)
+```
+
+Based on the summary above, we can reject the null hypothesis for “zn”, “dis”, “rad”, “black” and “medv”.
+
+
+```{r}
+#The following part of code was found online.
+simple.reg <- vector("numeric",0)
+simple.reg <- c(simple.reg, fit.zn$coefficient[2])
+simple.reg <- c(simple.reg, fit.indus$coefficient[2])
+simple.reg <- c(simple.reg, fit.chas$coefficient[2])
+simple.reg <- c(simple.reg, fit.nox$coefficient[2])
+simple.reg <- c(simple.reg, fit.rm$coefficient[2])
+simple.reg <- c(simple.reg, fit.age$coefficient[2])
+simple.reg <- c(simple.reg, fit.dis$coefficient[2])
+simple.reg <- c(simple.reg, fit.rad$coefficient[2])
+simple.reg <- c(simple.reg, fit.tax$coefficient[2])
+simple.reg <- c(simple.reg, fit.ptratio$coefficient[2])
+simple.reg <- c(simple.reg, fit.black$coefficient[2])
+simple.reg <- c(simple.reg, fit.lstat$coefficient[2])
+simple.reg <- c(simple.reg, fit.medv$coefficient[2])
+mult.reg <- vector("numeric", 0)
+mult.reg <- c(mult.reg, fit.all$coefficients)
+mult.reg <- mult.reg[-1]
+plot(simple.reg, mult.reg, col = "cyan")
+```
+From the plot, we can see that there is a difference between the results from (a) and the results from (b). It is because:
+
+*In the simple regression case, the slope term represents the average effect of an increase in the predictor without considering other predictors. 
+
+*In the multiple regression case, the slope term represents the average effect of an increase in the predictor with other predictors fixed. 
+
+
+(d)
+```{r}
+fit.zn2 <- lm(crim ~ poly(zn, 3))
+summary(fit.zn2)
+```
+
+
+
+```{r}
+fit.indus2 <- lm(crim ~ poly(indus, 3))
+summary(fit.indus2)
+```
+
+
+
+```{r}
+fit.rm2 <- lm(crim ~ poly(rm, 3))
+summary(fit.rm2)
+```
+
+
+
+```{r}
+fit.age2 <- lm(crim ~ poly(age, 3))
+summary(fit.age2)
+```
+
+
+
+```{r}
+fit.dis2 <- lm(crim ~ poly(dis, 3))
+summary(fit.dis2)
+```
+
+
+
+```{r}
+fit.rad2 <- lm(crim ~ poly(rad, 3))
+summary(fit.rad2)
+```
+
+
+
+```{r}
+fit.tax2 <- lm(crim ~ poly(tax, 3))
+summary(fit.tax2)
+
+```
+
+
+```{r}
+fit.ptratio2 <- lm(crim ~ poly(ptratio, 3))
+summary(fit.ptratio2)
+
+```
+
+
+
+```{r}
+fit.black2 <- lm(crim ~ poly(black, 3))
+summary(fit.black2)
+
+```
+
+
+
+```{r}
+fit.lstat2 <- lm(crim ~ poly(lstat, 3))
+summary(fit.lstat2)
+
+```
+
+
+
+```{r}
+fit.medv2 <- lm(crim ~ poly(medv, 3))
+summary(fit.medv2)
+
+```
+
+Yes, there is evidence of non-linear association between any of the predictors and the response. 
+
+*Using “zn”, “rm”, “rad”, “tax” and “lstat” as predictors: The p-values indicates that the cubic coefficient is not statistically significant.
+
+*Using “indus”, “nox”, “age”, “dis”, “ptratio” and “medv” as predictors: The p-values indicates the adequacy of the cubic fit.
+
+*Using “black” as predictors: The p-values indicates that the quandratic and cubic coefficients are not statistically significant, thus no non-linear effect is visible.
+
+
+
+

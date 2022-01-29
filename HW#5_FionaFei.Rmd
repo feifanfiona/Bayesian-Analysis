@@ -1,0 +1,165 @@
+---
+title: "HW#5_FionaFei"
+author: "Fiona Fei"
+date: "10/30/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ISLR)
+library(MASS)
+data(Boston)
+if (!require("splines")) {
+install.packages("splines")
+library(splines) }
+library(tidyverse)
+library(readr)
+```
+
+### Chapter 7, Pg298, Problem#3
+
+```{r}
+x = c(-2,-1.5,-1,-0.5,0,0.5,1,1.25,1.5,2)
+y = 1+x-2*(x-1)^2*(I(x>1))
+#df = data.frame(x,y)
+plot(x,y)
+abline(h = 0, col = "grey")
+abline(v = 0, col = "grey")
+
+```
+
+We can see that the relationship is linear between -21 and 1. The linear function is y = 1+x. The slope is 1, and the intercept is y = 1. The relationship is quadratic between 1 and 2. The quadratic function is y = -2(x-1)^2 + x + 1
+
+### Ch7, Pg299, P9(d) Use the bs() function to fit a regression spline to predict nox using dis. Report the output for the fit using four degrees of freedom. How did you choose the knots? Plot the resulting fit.
+
+
+```{r}
+#set.seed(4620)
+
+median(Boston$dis)
+fit.cs = lm(nox ~ bs(dis, knots= median(Boston$dis)), data = Boston)
+```
+
+
+
+```{r}
+pred.cs = predict(fit.cs, data.frame(dis=Boston$dis))
+sqrt(sum((pred.cs-Boston$dis)^2)/253)
+summary(fit.cs)
+```
+
+
+
+```{r}
+dis.grid=seq(min(Boston$dis),max(Boston$dis),length=100)
+pred.cs=predict(fit.cs,newdata=data.frame(dis=dis.grid), se=T)
+plot(Boston$dis, Boston$nox,col="grey")
+lines(dis.grid,pred.cs$fit,lwd=2)
+lines(dis.grid,pred.cs$fit-2*pred.cs$se,lty=2)
+lines(dis.grid,pred.cs$fit+2*pred.cs$se,lty=2)
+
+```
+
+
+
+```{r}
+#dim(bs(Boston$dis,df= fit.ss.cv$df))
+
+```
+
+
+```{r}
+#attr(bs(Boston$dis,df=fit.ss.cv$df), "knots")
+
+```
+
+```{r}
+#fit.cs.qu = lm(nox~bs(dis,df=fit.ss.cv.df), data = Boston)
+#summary(fit.cs.qu)
+
+```
+
+### (i). Divide the data into a training set and a test set of equal size.
+```{r}
+set.seed(4620)
+ix=sample(1:nrow(Boston), nrow(Boston)/2)
+boston.train=Boston[ix,]
+boston.test = Boston[-ix,]
+
+```
+
+
+### (ii). Fit a smoothing spline using cross-validation to select the degrees of freedom. Evaluate the performance of the model selected by cv on the test set.
+```{r}
+set.seed(4620)
+fit.ss=smooth.spline(boston.train$dis,boston.train$nox,df=16)
+fit.ss.cv=smooth.spline(boston.train$dis,boston.train$nox,cv=TRUE)
+
+```
+
+
+```{r}
+fit.ss.cv$df
+
+```
+
+```{r}
+plot(boston.train$dis,boston.train$nox,pch=20,xlab="Dix",ylab="Nox", col="grey")
+lines(fit.ss,col="red",lwd=3)
+lines(fit.ss.cv,col="blue",lwd=3)
+```
+
+The smooth spline doesn't seem to fit perfectly and it's a little wavy. 
+
+```{r}
+dim(bs(boston.test$dis, df = fit.ss.cv$df))
+
+
+```
+
+```{r}
+set.seed(4620)
+#fit.ss.cv = smooth.spline(Boston$dis,Boston$nox, cv = TRUE)
+pred.ss = predict(fit.ss.cv, x=boston.test$nox) 
+sqrt(sum((pred.ss$y - boston.test$nox)^2/253))
+mean((pred.ss$y-boston.test$nox)^2)
+
+```
+
+With the test MSE equals to 0.0426, we can see that the performance is good. Although the plot shows that the line wasn't perfectly smooth.
+
+
+### (iii). Use natural spline to fit the training data using the degrees of freedom from (ii) (round it up to a whole number). Evaluate the performance of the model on the test set.
+
+```{r}
+fit.ns=lm(nox~ns(dis, df = 10),data=boston.train)
+#pred.ns=predict(fit.ns,data.frame(dis=boston.test$dis))
+
+pred.ns=predict(fit.ns,newdata=data.frame(dis=dis.grid),se=T)
+
+plot(boston.test$dis,boston.test$nox,col="grey")
+lines(dis.grid,pred.ns$fit,lwd=2, col="red") 
+lines(dis.grid,pred.ns$fit-2*pred.cs$se,lty=2, col="red") 
+lines(dis.grid,pred.ns$fit+2*pred.cs$se,lty=2, col="red") 
+lines(dis.grid,pred.cs$fit,lwd=2, col = "blue") 
+lines(dis.grid,pred.cs$fit-2*pred.cs$se,lty=2, col = "blue") 
+lines(dis.grid,pred.cs$fit+2*pred.cs$se,lty=2, col = "blue")
+
+```
+
+```{r}
+pred.ns1=predict(fit.ns,data.frame(dis=boston.test$dis))
+sqrt(sum((pred.ns1 - boston.test$nox)^2/253))
+mean((pred.ns1 - boston.test$nox)^2)
+
+```
+
+
+With test MSE equal to 0.0037, we can see that the performance was better than the previous one. 
+
+
+
+

@@ -1,0 +1,319 @@
+---
+title: "HW#2_FionaFei"
+author: "Fiona Fei"
+date: "9/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install_tinytex()
+#tinytex::install_tinytex()
+library(ISLR)
+library(MASS)
+library(class)
+```
+
+
+### Questions 1
+#### (a)
+iii is correct.
+We can generate the least square model below:
+
+$\hat{y}$ = 50 + $20\times GPA$ + $0.07\times IQ$ + $35\times Gender$ + $0.01GPA\times IQ$ - $10GPA\times Gender$
+
+As for males, the model is:
+
+$\hat{y}$ = 50 + $20\times GPA$ + $0.07\times IQ$ + $0.01GPA\times IQ$
+
+For females, the model is:
+
+$\hat{y}$ = 85 + $10\times GPA$ + $0.07\times IQ$ + $0.01GPA\times IQ$
+
+By comparing two models together, we can see that with a fixed value of IQ and GPA, males earn more on average than females provided that the GPA is high enough. 
+
+#### (b)
+by plugging in the values, we can get
+$\hat{y}$ = 85 + 40 + 7.7 + 4.4 = 137.1
+Thus, the salary of a female with IQ of 110 and a GPA of 4.0 is $137100.
+
+#### (c) 
+The statement is false. 
+We cannot make conclusion by only look at the coefficient for the GPA*IQ interaction term. We need to look at the p-value of the regression coefficient $\beta 4$.
+
+### Questions 2
+#### (a)
+Since the real relationship between X and Y is linear, the least squares line would be more closer to the real regression line. This leads to the RSS of the linear regression will be lower comparing with cubic regression. 
+
+#### (b)
+In this case, we can assume that the cubic regression's RSS will be higher because over-fitting to training data will cause more error comparing with linear regression. 
+
+#### (c)
+The training RSS for cubic regression will be lower because a highly flexible model would fit more closely to observations and reduce train RSS. 
+
+#### (d)
+There are not enough information to tell which one is lower. For test RSS, we need to know how different is the relationship from linear model in order to determine the test RSS value. 
+
+### Questions 3
+#### (a)
+Fraction of available observations for X in [0,0.05) or (0.95,1]
+
+
+$\frac{(X + 0.05 - (X - 0.05))}{1-0}$ = 0.1 = 10%
+
+For X in [0,0.05), the observations will be [0,X + 0.05]
+For X in (0.95,1], the observations will be [X - 0.05,1]
+
+The process is same with divide the interval [0,1] into three parts showen below: 
+
+$0 \le X < 0.05 \le X \le 0.95 < X \le 1$ 
+
+To calculate the average, we need to calculate the integral below: 
+
+$\int_{0}^{0.05}$(x + 0.05 - 0)dx + $\int_{0.05}^{0.95}$(0.1)dx + $\int_{0.95}^{1}$(1.05-x)dx
+= 0.00375 + 0.09 + 0.00375 = 0.0975 = 9.75%
+
+#### (b)
+
+Assuming that X1 and X2 are independent, the fraction of the available observations will we use to make the prediction is:
+
+$0.0975^{2}$ = 0.95%
+
+#### (c)
+The fraction of the available observations will we use to make the prediction is :
+
+$0.0975^{100}$ 	$\approx$ 0%
+
+#### (d)
+From the previous questions, we can discover that the fraction of the available observations we use to make the predction gets smaller as p goes higher. Thus, when p increase to infinity, the fraction of the available observations we use to make the prediction will goes to zero. 
+
+
+### Question 4
+
+#### (a)
+plug the value in to the equation:
+
+$\hat{p}$(X) = ($e^{p(X)}$)/(1 + $e^{p(x)}$)
+
+
+$\hat{p}$(X) = ($e^{-6 + 0.05X1 + X2}$) / (1 + $e^{-6+0.05X1 + X2}$) = 0.3775
+
+#### (b)
+
+$\hat{p}$(X) = ($e^{-6 + 0.05X1 + 3.5}$) / (1 + $e^{-6+0.05X1 + 3.5}$) = 0.5
+
+$e^{-6 + 0.05X1 + 3.5}$ = 1
+
+X1 = 2.5/0.05 = 50
+
+
+### Question 5
+#### (a)
+```{r}
+summary(Weekly)
+```
+
+
+
+```{r}
+pairs(Weekly)
+```
+
+
+
+
+```{r}
+plot(Lag1~Year, col = "darkslategray3", data = Weekly)
+plot(Volume~Year, col = "darkgreen", data = Weekly)
+```
+
+In the plot, we can discover that 
+1. There are almost no correlations between Lag and Year. 
+1. The Volume has been increasing as the year increases. 
+
+
+#### (b)
+
+
+```{r}
+fit.all = glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Weekly, family = binomial)
+summary(fit.all)
+```
+
+From the summary table, we can see that only Lag2 is statistically significant for predicting the Direction with the estimated coefficient 0.05844. This coefficient means with one unit increase in Lag2 will lead to e^0.05844 = 1.06
+in crease in Direction. 
+
+#### (c)
+
+
+```{r}
+#Confusion matrix
+prob = predict(fit.all, type="response")
+pred = rep("Down", length(prob))
+pred[prob > 0.5] = "Up"
+table(pred, Weekly$Direction)
+
+length(prob)
+```
+
+The percentage of correct predictions on traing data is:
+
+(54 + 557)/1089 = 56.11%
+
+So the error rate is:
+
+100% - 56.11% = 43.89%
+
+Right rate when markets goes up = (557/(48 + 557)) = 92%
+
+RIght rate when markets goes down = (54/(54 + 430)) = 11.2%
+
+So we can conclude that the model is accurate only when the market is going up.
+
+#### (d)
+
+```{r}
+train = (Weekly$Year < 2009)
+week.0910 = Weekly[!train, ]
+direction.0910 = Weekly$Direction[!train]
+fit.glm2 = glm(Direction ~ Lag2, data = Weekly, family = binomial, subset = train)
+summary(fit.glm2)
+```
+
+
+
+
+
+```{r}
+prob1 = predict(fit.glm2, week.0910, type = "response")
+pred.glm2 = rep("Down", length(prob1))
+pred.glm2[prob1 > 0.5] = "Up"
+table(pred.glm2, direction.0910)
+
+length(prob1)
+```
+
+The percentage of correct predictions on traing data is:
+(9 + 56)/104 = 62.5%
+
+Error rate:
+100% - 62.5% = 37.5%
+
+Right rate when markets goes up = (56/(56 + 5)) = 91.8%
+
+Right rate when markets goes down = (9/(9 + 34)) = 20.9%
+
+So we can conclude that the model is accurate only when the market is going up.
+
+
+#### (e)
+```{r}
+fit.lda <- lda(Direction ~ Lag2, data = Weekly, subset = train)
+fit.lda
+```
+
+
+```{r}
+pred.lda = predict(fit.lda, week.0910)
+table(pred.lda$class, direction.0910)
+
+
+```
+
+The percentage of correct predictions on training data is:
+(9 + 56)/104 = 62.5%
+
+Error rate:
+100% - 62.5% = 37.5%
+
+Right rate when markets goes up = (56/(56 + 5)) = 91.8%
+
+Right rate when markets goes down = (9/(9 + 34)) = 20.9%
+
+So we can conclude that the model is accurate only when the market is going up.
+
+#### (f)
+```{r}
+fit.qda = qda(Direction ~ Lag2, data = Weekly, subset = train)
+fit.qda
+```
+
+
+
+
+```{r}
+pred.qda = predict(fit.qda, week.0910)
+table(pred.qda$class, direction.0910)
+```
+
+The percentage of correct predictions on training data is:
+
+(0 + 61) / 104 = 58.7%
+
+Error rate:
+100% - 58.7% = 41.3%
+
+Right rate when markets goes up = (61/(61 + 0)) = 100%
+
+Right rate when markets goes down = (0/(0 + 43)) = 0%
+
+So we can conclude that the model is accurate only when the market is going up.
+
+
+#### (g)
+```{r}
+train.X = as.matrix(Weekly$Lag2[train])
+test.X = as.matrix(Weekly$Lag2[!train])
+train.Direction = Weekly$Direction[train]
+set.seed(1)
+pred.knn <- knn(train.X, test.X, train.Direction, k = 1)
+table(pred.knn, direction.0910)
+```
+
+The percentage of correct predictions on training data is:
+
+(21 + 31) / 104 = 50%
+
+Error rate:
+100% - 50% = 50%
+
+Right rate when markets goes up = (31/(31 + 30)) = 50.8%
+
+Right rate when markets goes down = (21/(21 + 22)) = 48.8%
+
+So we can conclude that the model is not accurate.
+
+#### (h)
+Comparing with the error rate, we can find that the logistic regression and using LDA generated the lowest error rates. 
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+```
+
+
+
+
+```{r}
+
+```
+
+

@@ -1,0 +1,178 @@
+---
+title: "4620Project"
+author: "ShiyuDou"
+date: "11/25/2020"
+output: html_document
+---
+```{r,include=F}
+library(ISLR)
+library(tree)
+library(randomForest)
+library(MASS)
+if (!require("splines")) {
+install.packages("splines")
+library(splines) }
+library(tidyverse)
+library(readr)
+library(lattice)
+library(ggplot2)
+library(GGally)
+```
+
+```{r}
+library(readr)
+Wage <- read_csv("Wage_Stat4620.csv")
+View(Wage)
+```
+
+
+```{r, warning=F}
+Wage$maritl = substr(Wage$maritl, 1, 1)
+Wage$race = substr(Wage$race, 1, 1)
+Wage$education = substr(Wage$education, 1, 1)
+Wage$region = substr(Wage$region, 1, 1)
+Wage$jobclass = substr(Wage$jobclass, 1, 1)
+Wage$health = substr(Wage$health, 1, 1)
+Wage$health_ins = substr(Wage$health_ins, 1, 1)
+```
+
+
+```{r, warning=F}
+library(tidyverse)
+Wage <- Wage %>% 
+    mutate(maritl = as.factor(recode(maritl, 
+                      "1" = 1, 
+                      "2" = 2,
+                      "3" = 3,
+                      "4" = 4,
+                      "5" = 5))) %>% 
+    mutate(race = as.factor(recode(race, 
+                      "1" = 1, 
+                      "2" = 2,
+                      "3" = 3)))%>% 
+    mutate(education = as.factor(recode(education, 
+                      "1" = 1, 
+                      "2" = 2,
+                      "3" = 3,
+                      "4" = 4,
+                      "5" = 5)))%>% 
+    mutate(region = as.factor(recode(region, 
+                      "1" = 1, 
+                      "2" = 2)))%>% 
+    mutate(jobclass = as.factor(recode(jobclass, 
+                      "1" = 1, 
+                      "2" = 2)))%>% 
+    mutate(health = as.factor(recode(health, 
+                      "1" = 1, 
+                      "2" = 2)))%>% 
+    mutate(health_ins = as.factor(recode(health_ins, 
+                      "1" = 1, 
+                      "2" = 2)))%>%
+  mutate(RespB = as.factor(recode(RespB, 
+                      "Yes" = 1, 
+                      "No" = 2)))
+```
+
+```{r, warning=F}
+set.seed(4620)
+attach(Wage)
+train = sample(1:nrow(Wage), nrow(Wage)/2)
+Wage.train = Wage[train, ]
+Wage.test = Wage[-train,]
+```
+
+
+```{r}
+set.seed(4)
+tree.fit = tree(RespB ~ ., data = Wage.train)
+summary(tree.fit)
+tree.pred = predict(tree.fit, Wage.test)
+# Test MSE
+mean((tree.pred - Wage.test$Resp)^2)
+plot(tree.fit)
+text(tree.fit, pretty = 0, cex =1.5)
+```
+
+```{r}
+imp = mice(Wage_Stat4620, m = 20,printFlag = FALSE, maxit = 40, seed=2525)
+fit.mi = with(data=imp, exp = lm(Resp~year+X1+age+logwage+wage,data =Wage_Stat4620))
+combFit = pool(fit.mi) 
+imp_2 =complete(imp,2)
+```
+
+```{r}
+imp2 = mice(Wage_Stat4620, m=20,printFlag=FALSE, maxit = 40, seed=2525)
+fit.mi2 = with(data=imp2, exp = glm(RespB~year+X1+age+logwage+wage,data =Wage_Stat4620,family = binomial))
+combFit = pool(fit.mi2) 
+imp_2 =complete(imp,2)
+```
+
+2.a.ii exploratory analysis and preprocessing
+
+```{r}
+pairs(Wage)
+
+```
+
+```{r}
+splom(Wage)
+```
+
+```{r}
+
+#plotmatrix(Wage[1:4])
+
+```
+
+
+2.a.iii Split data into testing set and training set.
+
+```{r}
+#Wage
+set.seed(4620)
+ix=sample(1:nrow(Wage), nrow(Wage)/2)
+wage.train=Wage[ix,]
+wage.test = Wage[-ix,]
+
+```
+
+Histogram with different marriage status.
+
+```{r}
+ggplot2.histogram(data=Wage, xName='Resp',
+        groupName='mariti', legendPosition="top")
+
+```
+
+Histogram with different race. 
+
+```{r}
+ggplot2.histogram(data=Wage, xName='Resp',
+        groupName='race', legendPosition="top")
+
+```
+
+Histogram to compare the Resp value for people with different education status.
+
+```{r}
+ggplot2.histogram(data=Wage, xName='Resp',
+        groupName='education', legendPosition="top")
+
+```
+
+
+Histogram to compare the Resp value for people with different jobclass. 
+
+```{r}
+ggplot2.histogram(data=Wage, xName='Resp',
+        groupName='jobclass', legendPosition="top")
+
+```
+
+Histogram to compare the Resp value for people with different health conditions. 
+```{r}
+ggplot2.histogram(data=Wage, xName='Resp',
+        groupName='health', legendPosition="top")
+
+```
+

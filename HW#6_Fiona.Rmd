@@ -1,0 +1,181 @@
+---
+title: "HW#6_Fiona"
+author: "Fiona Fei"
+date: "11/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require("tree"))
+{
+install.packages("tree")
+library(tree)
+}
+if (!require("ISLR"))
+{
+install.packages("ISLR")
+library(ISLR)
+}
+if (!require("MASS"))
+{
+install.packages("MASS")
+library(MASS)
+}
+if (!require("randomForest")) #for bagging and rf
+{
+install.packages("randomForest")
+library(randomForest)
+}
+if (!require("gbm")) #for bagging and rf
+{
+install.packages("gbm")
+library(gbm)
+}
+```
+
+### Chapter 8, page 332, Problem 4. (6 points)
+
+#### (a)Sketch the tree corresponding to the partition of the predictor space illustrated in the left-hand panel of Figure 8.12. The numbers inside the boxes indicate the mean of Y within each region.
+
+```{r}
+
+
+```
+
+
+#### (b)Create a diagram similar to the left-hand panel of Figure 8.12, using the tree illustrated in the right-hand panel of the same figure. You should divide up the predictor space into the correct regions, and indicate the mean for each region.
+
+
+
+### Chapter 8, page 332, Problem 5. (6 points)
+
+For vote approach, Red is the most common class with 6 of them, and Green has 4. 
+For average probability approach, Green is the most common class because the average of the 10 is 0.45. 
+
+
+### Chapter 8, page 333, Problem 8. (18 points)
+In the lab, a classification tree was applied to the Carseats data set af- ter converting Sales into a qualitative response variable. Now we will seek to predict Sales using regression trees and related approaches, treating the response as a quantitative variable.
+
+#### (a) Split the data set into a training set and a test set.
+```{r}
+set.seed(4620)
+ix=sample(1:nrow(Carseats), nrow(Carseats)/2)
+car.train=Carseats[ix,]
+car.test = Carseats[-ix,]
+
+```
+
+#### (b) Fit a regression tree to the training set. Plot the tree, and interpret the results. What test error rate do you obtain?
+
+```{r}
+tree.fit = tree(Sales~.,data=car.train)
+summary(tree.fit)
+
+
+```
+
+```{r}
+plot(tree.fit)
+text(tree.fit, pretty = 0, cex=0.5)
+```
+
+```{r}
+
+tree.pred=predict(tree.fit,car.test)
+mean((tree.pred-car.test$Sales)^2)
+```
+
+Thus, the test MSE is aound 5.222146. 
+
+
+We can see that there is an initial split on ShelveLoc between Bad or Medium with Good. Thus, ShelveLoc is the best predictor if lowering the model's RSS. 
+Moreover, the second best predictors are Price and US. In addition, Urban did not show on the tree at all. 
+Lastly, predictors Advertising and Income only shows on the left side of tree but not on the right side. 
+
+
+#### (c) Use cross-validation in order to determine the optimal level of tree complexity. Does pruning the tree improve the test error rate?
+
+
+```{r}
+set.seed(4620)
+cv.fit=cv.tree(tree.fit)
+names(cv.fit)
+
+
+```
+
+```{r}
+cv.fit$size; cv.fit$dev
+```
+
+
+
+```{r}
+cv.fit$size[which.min(cv.fit$dev)]
+```
+
+
+
+```{r}
+size=cv.fit$size[which.min(cv.fit$dev)]
+prune.fit=prune.tree(tree.fit,best=size)
+plot(prune.fit)
+text(prune.fit,pretty=0,cex=0.7)
+```
+
+
+```{r}
+prune.pred=predict(prune.fit,car.test)
+sum((prune.pred-car.test$Sales)^2); sum((prune.pred-car.test$Sales)^2)/(nrow(car.test)-size)
+```
+
+Thus, we can see that pruning the tree made the test MSE increased to 5.85.
+
+
+
+#### (d) Use the bagging approach in order to analyze this data. What test error rate do you obtain? Use the importance() function to determine which variables are most important.
+
+```{r}
+set.seed(4620)
+bag.fit=randomForest(Sales~.,data=car.train,mtry=13,importance=TRUE, ntree=500)
+#default ntree=500
+bag.pred=predict(bag.fit,newdata=car.test)
+#plot(bag.pred,test$medv,pch=20)
+#abline(0,1)
+mean((bag.pred-car.test$Sales)^2)
+```
+
+THus, we can see that using bagging decreased the MSE to 2.6. 
+
+
+```{r}
+importance(bag.fit)
+
+```
+
+Thus, we can conclude that Price and ShalveLoc are the most important variables among all of them. 
+
+#### (e) Use random forests to analyze this data. What test error rate do you obtain? Use the importance() function to determine which variables are most important. Describe the effect of m, the num- ber of variables considered at each split, on the error rate obtained.
+
+```{r}
+set.seed(4620)
+rf.fit=randomForest(Sales~.,data=car.train,importance=TRUE)
+rf.pred=predict(rf.fit,newdata=car.test)
+mean((rf.pred-car.test$Sales)^2)
+
+```
+
+We can see that we have a test MSE around 3.01.
+
+```{r}
+importance(rf.fit, type=1)
+
+```
+
+In conclusion, ShelveLoc and Price are the two most important variables among all of them. 
+
+
+
+
+
